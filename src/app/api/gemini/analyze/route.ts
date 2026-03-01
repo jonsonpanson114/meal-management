@@ -12,8 +12,11 @@ export async function POST(req: NextRequest) {
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ success: false, error: 'APIキーが設定されていません' }, { status: 500 });
+    if (!apiKey || apiKey === 'placeholder-gemini-key') {
+      return NextResponse.json(
+        { success: false, error: 'GEMINI_API_KEY が設定されていません。Vercel の環境変数を確認してください。' },
+        { status: 503 }
+      );
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
