@@ -1,199 +1,117 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
-import { useState, useEffect, useCallback } from 'react';
-import { BarChart2, Sparkles, Loader2, RefreshCw } from 'lucide-react';
-import WeeklyCharts from '@/components/WeeklyCharts';
-import { createClient } from '@/lib/supabase/client';
-import type { WeeklyData, MealRecord, DailyRecord } from '@/types';
+import { useWeightHistory } from '@/lib/hooks/useWeightHistory';
+import WeightChart from '@/components/WeightChart';
+import { Scale, TrendingDown, TrendingUp, Minus, Calendar, Loader2, Info } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function ReportPage() {
-  const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
-  const [aiComment, setAiComment] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [generatingComment, setGeneratingComment] = useState(false);
-  const supabase = createClient();
+  const { history, loading } = useWeightHistory(30);
+  const router = useRouter();
 
-  const fetchWeeklyData = useCallback(async () => {
-    setLoading(true);
-    const today = new Date();
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 6);
+  const stats = (() => {
+    if (history.length < 2) return null;
+    const weights = history.map(h => h.weight as number);
+    const current = weights[weights.length - 1];
+    const previous = weights[weights.length - 2];
+    const diff = current - previous;
+    const min = Math.min(...weights);
+    const max = Math.max(...weights);
+    const totalDiff = current - weights[0];
 
-    const startDate = weekAgo.toISOString().split('T')[0];
-    const endDate = today.toISOString().split('T')[0];
+    return { current, diff, min, max, totalDiff };
+  })();
 
-    const [mealsResult, recordsResult] = await Promise.all([
-      supabase
-        .from('meal_records')
-        .select('*')
-        .gte('recorded_at', `${startDate}T00:00:00`)
-        .lte('recorded_at', `${endDate}T23:59:59`)
-        .order('recorded_at', { ascending: true }),
-      supabase
-        .from('daily_records')
-        .select('*')
-        .gte('date', startDate)
-        .lte('date', endDate),
-    ]);
-
-    const meals = (mealsResult.data || []) as MealRecord[];
-    const records = (recordsResult.data || []) as DailyRecord[];
-
-    // Build 7-day array
-    const days: WeeklyData[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const dayMeals = meals.filter((m) => m.recorded_at.startsWith(dateStr));
-      const dailyRecord = records.find((r) => r.date === dateStr);
-
-      days.push({
-        date: dateStr,
-        total_calories: dayMeals.reduce((sum, m) => sum + (m.calories || 0), 0),
-        weight: dailyRecord?.weight ?? undefined,
-        focus_level: dailyRecord?.focus_level ?? undefined,
-        meals: dayMeals,
-      });
-    }
-
-    setWeeklyData(days);
-    setLoading(false);
-  }, []);
-
-  const generateAIComment = async () => {
-    if (weeklyData.length === 0) return;
-    setGeneratingComment(true);
-
-    try {
-      const summary = {
-        avgCalories: Math.round(weeklyData.reduce((s, d) => s + d.total_calories, 0) / 7),
-        weights: weeklyData.filter((d) => d.weight).map((d) => ({ date: d.date, weight: d.weight })),
-        focusLevels: weeklyData.filter((d) => d.focus_level).map((d) => ({ date: d.date, focus: d.focus_level })),
-        topFoods: weeklyData
-          .flatMap((d) => d.meals.flatMap((m) => m.foods || []))
-          .slice(0, 10)
-          .map((f) => f.name),
-      };
-
-      const res = await fetch('/api/gemini/weekly-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ summary }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setAiComment(data.comment);
-      }
-    } catch {
-      setAiComment('コメントの生成に失敗しました。');
-    } finally {
-      setGeneratingComment(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchWeeklyData();
-  }, [fetchWeeklyData]);
-
-  useEffect(() => {
-    if (!loading && weeklyData.some((d) => d.total_calories > 0)) {
-      generateAIComment();
-    }
-  }, [loading]);
-
-  // Stats
-  const avgCalories = weeklyData.length
-    ? Math.round(weeklyData.reduce((s, d) => s + d.total_calories, 0) / 7)
-    : 0;
-  const recordedDays = weeklyData.filter((d) => d.total_calories > 0).length;
-  const avgFocus = weeklyData.filter((d) => d.focus_level).length
-    ? (weeklyData.filter((d) => d.focus_level).reduce((s, d) => s + (d.focus_level || 0), 0) /
-        weeklyData.filter((d) => d.focus_level).length).toFixed(1)
-    : '-';
+  const weightData = history.map(h => ({ date: h.date, weight: h.weight as number }));
 
   return (
-    <div className="page-container">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className="gradient-purple w-10 h-10 rounded-xl flex items-center justify-center shadow-md">
-            <BarChart2 size={20} className="text-white" />
-          </div>
-          <div>
-            <h1 className="font-black text-gray-800">週次レポート</h1>
-            <p className="text-xs text-gray-400">過去7日間の記録</p>
-          </div>
+    <div className="page-container pb-24">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="gradient-primary w-10 h-10 rounded-xl flex items-center justify-center shadow-md">
+          <Scale size={20} className="text-white" />
         </div>
-        <button
-          onClick={fetchWeeklyData}
-          className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-transform"
-        >
-          <RefreshCw size={16} className="text-gray-500" />
-        </button>
-      </div>
-
-      {/* Stats cards */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="card text-center">
-          <p className="text-xs text-gray-400 font-medium">平均カロリー</p>
-          <p className="text-lg font-black text-orange-500">{avgCalories.toLocaleString()}</p>
-          <p className="text-[10px] text-gray-400">kcal/日</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-xs text-gray-400 font-medium">記録日数</p>
-          <p className="text-lg font-black text-green-500">{recordedDays}</p>
-          <p className="text-[10px] text-gray-400">日 / 7日</p>
-        </div>
-        <div className="card text-center">
-          <p className="text-xs text-gray-400 font-medium">平均集中力</p>
-          <p className="text-lg font-black text-purple-500">{avgFocus}</p>
-          <p className="text-[10px] text-gray-400">/ 5点</p>
+        <div>
+          <h1 className="text-xl font-black text-gray-800">レポート</h1>
+          <p className="text-xs text-gray-400 font-medium">からだの推移をチェック</p>
         </div>
       </div>
 
-      {/* AI Comment */}
-      <div className="card mb-5 bg-gradient-to-br from-orange-50 to-pink-50 border border-orange-100">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-orange-400" />
-            <h3 className="text-sm font-bold text-orange-600">AIからの今週の気づき</h3>
-          </div>
-          <button
-            onClick={generateAIComment}
-            disabled={generatingComment}
-            className="text-xs text-orange-400 font-bold active:scale-95 transition-transform"
-          >
-            <RefreshCw size={14} className={generatingComment ? 'animate-spin' : ''} />
-          </button>
-        </div>
-
-        {generatingComment ? (
-          <div className="flex items-center gap-2 text-sm text-gray-400 py-2">
-            <Loader2 size={16} className="animate-spin text-orange-400" />
-            AIがあなたの記録を分析中...
-          </div>
-        ) : aiComment ? (
-          <p className="text-sm text-gray-700 leading-relaxed">{aiComment}</p>
-        ) : (
-          <p className="text-sm text-gray-400">食事を記録するとAIがコメントします</p>
-        )}
-      </div>
-
-      {/* Charts */}
       {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="card animate-pulse h-48">
-              <div className="h-4 bg-gray-100 rounded w-1/3 mb-4" />
-              <div className="h-32 bg-gray-100 rounded" />
-            </div>
-          ))}
+        <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl shadow-sm">
+          <Loader2 className="animate-spin text-orange-500 mb-2" size={32} />
+          <p className="text-sm text-gray-400 font-bold">データを読み込み中...</p>
         </div>
       ) : (
-        <WeeklyCharts data={weeklyData} />
+        <div className="space-y-4">
+          {/* Main Chart Card */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-bold text-gray-700 flex items-center gap-2">
+                <Calendar size={18} className="text-orange-500" />
+                最近30日間の体重
+              </h2>
+              {stats && (
+                <div className={`px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1 ${stats.totalDiff <= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                  }`}>
+                  {stats.totalDiff <= 0 ? <TrendingDown size={12} /> : <TrendingUp size={12} />}
+                  全体で {Math.abs(stats.totalDiff).toFixed(1)}kg {stats.totalDiff <= 0 ? '減' : '増'}
+                </div>
+              )}
+            </div>
+
+            <WeightChart data={weightData} height={220} />
+          </div>
+
+          {/* Stats Grid */}
+          {stats ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="card bg-orange-50/50 border-orange-100 flex flex-col items-center py-5">
+                <p className="text-[10px] font-bold text-orange-400 mb-1 uppercase tracking-wider">最高体重</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-800">{stats.max.toFixed(1)}</span>
+                  <span className="text-xs font-bold text-gray-400">kg</span>
+                </div>
+              </div>
+              <div className="card bg-green-50/50 border-green-100 flex flex-col items-center py-5">
+                <p className="text-[10px] font-bold text-green-400 mb-1 uppercase tracking-wider">最低体重</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-gray-800">{stats.min.toFixed(1)}</span>
+                  <span className="text-xs font-bold text-gray-400">kg</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="card bg-blue-50/50 border-blue-100 flex items-start gap-3 py-4">
+              <Info size={18} className="text-blue-400 mt-1 shrink-0" />
+              <div>
+                <p className="text-xs font-bold text-blue-700">まずは2日分記録してみよう</p>
+                <p className="text-[10px] text-blue-500/80 leading-relaxed mt-1">
+                  体重の変化をグラフで見るには、2日以上の記録が必要です。
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Tips Card */}
+          <div className="card bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-none shadow-lg shadow-indigo-100">
+            <h3 className="font-black mb-1 flex items-center gap-2">
+              <TrendingDown size={18} />
+              スマートな減量のコツ
+            </h3>
+            <p className="text-[10px] leading-relaxed opacity-90 font-medium">
+              体重の増減に一喜一憂しすぎないことが大切です。週に一度、このグラフの「全体的なトレンド」が下がっているかチェックしてみましょう！
+            </p>
+          </div>
+
+          {stats && (
+            <button
+              onClick={() => router.push('/')}
+              className="w-full bg-white border-2 border-gray-100 text-gray-500 font-bold py-4 rounded-2xl active:scale-95 transition-transform flex items-center justify-center gap-2"
+            >
+              ホームに戻る
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
