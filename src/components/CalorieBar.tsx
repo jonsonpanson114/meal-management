@@ -76,5 +76,4 @@ export default function CalorieBar({ consumed, target, protein, fat, carbs }: Pr
     </div>
   );
 }
-  );
-}
+
