@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Sparkles, RefreshCw, Send, Loader2 } from 'lucide-react';
 import PhotoUpload from '@/components/PhotoUpload';
@@ -26,6 +26,44 @@ export default function AddMealPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [quickCalories, setQuickCalories] = useState<number | null>(null);
+  const [quickAnalyzing, setQuickAnalyzing] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Auto-estimate calories as user types (text only)
+  useEffect(() => {
+    if (imageBase64 || !description.trim()) {
+      setQuickCalories(null);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setQuickAnalyzing(true);
+      try {
+        const res = await fetch('/api/gemini/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ description }),
+          signal: controller.signal,
+        });
+        const data = await res.json();
+        if (data.success && !controller.signal.aborted) {
+          setQuickCalories(data.data.calories);
+        }
+      } catch {
+        // ignore abort errors
+      } finally {
+        if (!controller.signal.aborted) setQuickAnalyzing(false);
+      }
+    }, 1500);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [description, imageBase64]);
 
   const handleAnalyze = async (isReanalysis = false) => {
     if (!imageBase64 && !description) {
@@ -139,11 +177,10 @@ export default function AddMealPage() {
               <button
                 key={type}
                 onClick={() => setMealType(type)}
-                className={`py-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${
-                  isSelected
+                className={`py-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${isSelected
                     ? `bg-gradient-to-b ${gradient} text-white shadow-md`
                     : 'bg-white text-gray-500 shadow-sm'
-                }`}
+                  }`}
               >
                 {MEAL_TYPE_LABELS[type]}
               </button>
@@ -176,10 +213,26 @@ export default function AddMealPage() {
         <textarea
           placeholder="例: ざるそば、天ぷら盛り合わせ"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => { setDescription(e.target.value); setNutrition(null); }}
           rows={2}
           className="w-full bg-white border-2 border-gray-100 focus:border-orange-300 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none transition-colors resize-none shadow-sm"
         />
+        {/* Quick calorie estimate badge */}
+        {!imageBase64 && !nutrition && description.trim() && (
+          <div className="mt-2 flex items-center gap-1.5">
+            {quickAnalyzing ? (
+              <span className="inline-flex items-center gap-1 text-xs text-orange-400 font-medium">
+                <Loader2 size={12} className="animate-spin" />
+                カロリーを計算中...
+              </span>
+            ) : quickCalories !== null ? (
+              <span className="inline-flex items-center gap-1.5 bg-orange-50 text-orange-600 text-xs font-bold px-3 py-1 rounded-full border border-orange-100">
+                <Sparkles size={11} />
+                約 {quickCalories} kcal
+              </span>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Analyze Button */}
@@ -187,11 +240,10 @@ export default function AddMealPage() {
         <button
           onClick={() => handleAnalyze(false)}
           disabled={analyzing || (!imageBase64 && !description)}
-          className={`w-full py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 mb-4 ${
-            analyzing || (!imageBase64 && !description)
+          className={`w-full py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 mb-4 ${analyzing || (!imageBase64 && !description)
               ? 'bg-gray-200 text-gray-400 shadow-none'
               : 'gradient-primary shadow-orange-200'
-          }`}
+            }`}
         >
           {analyzing ? (
             <>
@@ -267,11 +319,10 @@ export default function AddMealPage() {
       <button
         onClick={handleSave}
         disabled={saving || (!nutrition && !description)}
-        className={`w-full py-4 rounded-2xl font-black text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 text-base ${
-          saving || (!nutrition && !description)
+        className={`w-full py-4 rounded-2xl font-black text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 text-base ${saving || (!nutrition && !description)
             ? 'bg-gray-200 text-gray-400 shadow-none'
             : 'gradient-primary shadow-orange-200'
-        }`}
+          }`}
       >
         {saving ? (
           <>

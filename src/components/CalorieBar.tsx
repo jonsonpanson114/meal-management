@@ -5,12 +5,34 @@ import { Flame } from 'lucide-react';
 interface Props {
   consumed: number;
   target: number;
+  protein?: { consumed: number; target: number };
+  fat?: { consumed: number; target: number };
+  carbs?: { consumed: number; target: number };
 }
 
-export default function CalorieBar({ consumed, target }: Props) {
+export default function CalorieBar({ consumed, target, protein, fat, carbs }: Props) {
   const percent = Math.min((consumed / target) * 100, 100);
   const remaining = Math.max(target - consumed, 0);
   const isOver = consumed > target;
+
+  const renderMiniBar = (label: string, data?: { consumed: number; target: number }, colorClass?: string) => {
+    if (!data) return null;
+    const p = Math.min((data.consumed / data.target) * 100, 100);
+    return (
+      <div className="flex-1">
+        <div className="flex justify-between items-end mb-1 px-1">
+          <span className="text-[9px] font-bold text-gray-400">{label}</span>
+          <span className="text-[9px] font-black text-gray-600">{Math.round(data.consumed)}<span className="text-gray-400 font-medium">/{data.target}g</span></span>
+        </div>
+        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full ${colorClass}`}
+            style={{ width: `${p}%` }}
+          />
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="card animate-slide-up">
@@ -38,18 +60,21 @@ export default function CalorieBar({ consumed, target }: Props) {
         )}
       </div>
 
-      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-3 bg-gray-100 rounded-full overflow-hidden mb-4">
         <div
-          className={`h-full rounded-full transition-all duration-700 ${
-            isOver ? 'bg-gradient-to-r from-red-400 to-rose-500' : 'bg-gradient-to-r from-orange-400 to-yellow-400'
-          }`}
+          className={`h-full rounded-full transition-all duration-700 ${isOver ? 'bg-gradient-to-r from-red-400 to-rose-500' : 'bg-gradient-to-r from-orange-400 to-yellow-400'
+            }`}
           style={{ width: `${percent}%` }}
         />
       </div>
-      <div className="flex justify-between mt-1">
-        <span className="text-[10px] text-gray-400">0</span>
-        <span className="text-[10px] text-gray-400">{target.toLocaleString()} kcal</span>
+
+      <div className="flex gap-4">
+        {renderMiniBar('P', protein, 'bg-blue-400')}
+        {renderMiniBar('F', fat, 'bg-yellow-400')}
+        {renderMiniBar('C', carbs, 'bg-green-400')}
       </div>
     </div>
+  );
+}
   );
 }

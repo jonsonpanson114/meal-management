@@ -8,6 +8,7 @@ import { Settings, Bell } from 'lucide-react';
 import MorningCard from '@/components/MorningCard';
 import MealTimeline from '@/components/MealTimeline';
 import CalorieBar from '@/components/CalorieBar';
+import DailyInsightCard from '@/components/DailyInsightCard';
 import { useMeals } from '@/lib/hooks/useMeals';
 import { useDailyRecord } from '@/lib/hooks/useDailyRecord';
 
@@ -18,6 +19,14 @@ export default function HomePage() {
   const { record } = useDailyRecord();
 
   const target = record?.target_calories || DEFAULT_TARGET;
+  const targetP = record?.target_protein || 50;
+  const targetF = record?.target_fat || 50;
+  const targetC = record?.target_carbs || 200;
+
+  const totalP = meals.reduce((sum, m) => sum + (m.protein || 0), 0);
+  const totalF = meals.reduce((sum, m) => sum + (m.fat || 0), 0);
+  const totalC = meals.reduce((sum, m) => sum + (m.carbs || 0), 0);
+
   const today = new Date().toLocaleDateString('ja-JP', {
     month: 'long',
     day: 'numeric',
@@ -52,9 +61,20 @@ export default function HomePage() {
         <MorningCard />
       </div>
 
+      {/* AI Insight */}
+      <div className="mb-4">
+        <DailyInsightCard meals={meals} />
+      </div>
+
       {/* Calorie Bar */}
       <div className="mb-4">
-        <CalorieBar consumed={totalCalories} target={target} />
+        <CalorieBar
+          consumed={totalCalories}
+          target={target}
+          protein={{ consumed: totalP, target: targetP }}
+          fat={{ consumed: totalF, target: targetF }}
+          carbs={{ consumed: totalC, target: targetC }}
+        />
       </div>
 
       {/* Meal Timeline */}

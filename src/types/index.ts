@@ -54,6 +54,9 @@ export interface DailyRecord {
   weight?: number;
   focus_level?: number;
   target_calories?: number;
+  target_protein?: number;
+  target_fat?: number;
+  target_carbs?: number;
   created_at: string;
 }
 
@@ -62,6 +65,9 @@ export interface UserProfile {
   email: string;
   display_name?: string;
   target_calories: number;
+  target_protein: number;
+  target_fat: number;
+  target_carbs: number;
   created_at: string;
 }
 

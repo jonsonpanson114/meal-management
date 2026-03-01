@@ -11,6 +11,9 @@ export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();
   const [targetCalories, setTargetCalories] = useState('2000');
+  const [targetProtein, setTargetProtein] = useState('50');
+  const [targetFat, setTargetFat] = useState('50');
+  const [targetCarbs, setTargetCarbs] = useState('200');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [saving, setSaving] = useState(false);
@@ -31,6 +34,9 @@ export default function SettingsPage() {
       if (data) {
         setDisplayName(data.display_name || '');
         setTargetCalories(String(data.target_calories || 2000));
+        setTargetProtein(String(data.target_protein || 50));
+        setTargetFat(String(data.target_fat || 50));
+        setTargetCarbs(String(data.target_carbs || 200));
       }
     };
     load();
@@ -48,6 +54,9 @@ export default function SettingsPage() {
         email,
         display_name: displayName,
         target_calories: parseInt(targetCalories),
+        target_protein: parseInt(targetProtein),
+        target_fat: parseInt(targetFat),
+        target_carbs: parseInt(targetCarbs),
       });
 
     setSaving(false);
@@ -105,34 +114,64 @@ export default function SettingsPage() {
         <div className="card">
           <div className="flex items-center gap-2 mb-4">
             <Target size={18} className="text-orange-500" />
-            <h2 className="font-bold text-gray-700">1日の目標カロリー</h2>
+            <h2 className="font-bold text-gray-700">1日の目標設定</h2>
           </div>
-          <div className="relative">
-            <input
-              type="number"
-              min="1000"
-              max="5000"
-              step="50"
-              value={targetCalories}
-              onChange={(e) => setTargetCalories(e.target.value)}
-              className="w-full bg-orange-50 border-2 border-orange-100 focus:border-orange-400 rounded-xl px-4 py-3 text-xl font-bold text-orange-500 outline-none transition-colors"
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">kcal</span>
-          </div>
-          <div className="flex gap-2 mt-3">
-            {[1600, 1800, 2000, 2200, 2500].map((cal) => (
-              <button
-                key={cal}
-                onClick={() => setTargetCalories(String(cal))}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 ${
-                  targetCalories === String(cal)
-                    ? 'gradient-primary text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-500'
-                }`}
-              >
-                {cal}
-              </button>
-            ))}
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 mb-1.5 block">目標カロリー</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="1000"
+                  max="5000"
+                  step="50"
+                  value={targetCalories}
+                  onChange={(e) => setTargetCalories(e.target.value)}
+                  className="w-full bg-orange-50 border-2 border-orange-100 focus:border-orange-400 rounded-xl px-4 py-3 text-xl font-bold text-orange-500 outline-none transition-colors"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">kcal</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 mb-1 block text-center">タンパク質</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={targetProtein}
+                    onChange={(e) => setTargetProtein(e.target.value)}
+                    className="w-full bg-blue-50 border-2 border-blue-100 focus:border-blue-400 rounded-xl px-3 py-2 text-center font-bold text-blue-600 outline-none transition-colors"
+                  />
+                  <span className="absolute right-2 bottom-1 text-[8px] text-gray-400">g</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 mb-1 block text-center">脂質</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={targetFat}
+                    onChange={(e) => setTargetFat(e.target.value)}
+                    className="w-full bg-yellow-50 border-2 border-yellow-100 focus:border-yellow-400 rounded-xl px-3 py-2 text-center font-bold text-yellow-600 outline-none transition-colors"
+                  />
+                  <span className="absolute right-2 bottom-1 text-[8px] text-gray-400">g</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-gray-500 mb-1 block text-center">炭水化物</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={targetCarbs}
+                    onChange={(e) => setTargetCarbs(e.target.value)}
+                    className="w-full bg-green-50 border-2 border-green-100 focus:border-green-400 rounded-xl px-3 py-2 text-center font-bold text-green-600 outline-none transition-colors"
+                  />
+                  <span className="absolute right-2 bottom-1 text-[8px] text-gray-400">g</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
