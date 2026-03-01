@@ -126,5 +126,4 @@ export default function MealTimeline({ meals, loading }: Props) {
     </div>
   );
 }
-  );
-}
+
