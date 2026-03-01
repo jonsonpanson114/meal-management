@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #f97316;
+  --color-secondary: #fbbf24;
+  --color-accent: #34d399;
+  --color-coral: #fb7185;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 480px;
+  margin: 0 auto;
+  background: #f9fafb;
+  font-family: 'Noto Sans JP', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: linear-gradient(135deg, #f97316, #fb7185);
+  }
+  .gradient-morning {
+    background: linear-gradient(135deg, #fbbf24, #f97316);
+  }
+  .gradient-green {
+    background: linear-gradient(135deg, #34d399, #0d9488);
+  }
+  .gradient-purple {
+    background: linear-gradient(135deg, #a78bfa, #6366f1);
+  }
+  .gradient-snack {
+    background: linear-gradient(135deg, #fb7185, #e879f9);
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-md p-4;
+  }
+  .btn-primary {
+    @apply gradient-primary text-white font-bold py-3 px-6 rounded-2xl shadow-lg active:scale-95 transition-transform;
+  }
+  .btn-outline {
+    @apply border-2 border-orange-400 text-orange-500 font-bold py-3 px-6 rounded-2xl active:scale-95 transition-transform;
+  }
+  .page-container {
+    @apply min-h-screen pb-24 px-4 pt-4;
+  }
+}
+
+/* Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-pulse-scale {
+  animation: pulse-scale 2s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 2px;
+}
+
+/* Bottom nav safe area */
+.bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

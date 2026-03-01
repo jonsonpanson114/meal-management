@@ -1,0 +1,26 @@
+{
+  "name": "MealTrack - 食事記録＆健康トラッキング",
+  "short_name": "MealTrack",
+  "description": "AIが食事を分析して健康をサポートする食事記録アプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#f97316",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "food"],
+  "lang": "ja"
+}
