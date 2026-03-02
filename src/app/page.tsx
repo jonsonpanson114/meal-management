@@ -1,5 +1,6 @@
 'use client';
 
+// Triggering a fresh build to resolve Vercel deployment internal error.
 export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
