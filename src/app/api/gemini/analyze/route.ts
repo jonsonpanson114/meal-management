@@ -20,11 +20,13 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: { responseMimeType: 'application/json' },
+    });
 
-    const basePrompt = `あなたは栄養士AIです。${
-      description ? `食事の説明: "${description}"` : '提供された写真'
-    }${userComment ? `\nユーザーの補足: "${userComment}"` : ''}
+    const basePrompt = `あなたは栄養士AIです。${description ? `食事の説明: "${description}"` : '提供された写真'
+      }${userComment ? `\nユーザーの補足: "${userComment}"` : ''}
 
 この食事の内容とカロリーを推定し、以下のJSON形式のみで返してください。説明文やコードブロックは不要です。
 
@@ -54,19 +56,26 @@ export async function POST(req: NextRequest) {
 
     const text = result.response.text().trim();
 
-    // Extract JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('JSONが見つかりません');
+    // 厳密なJSONモードを指定しているため、直接パースを試みる
+    let nutritionData: NutritionInfo;
+    try {
+      nutritionData = JSON.parse(text);
+    } catch (parseError) {
+      console.error('Initial JSON parse failed, trying fallback regex extraction:', text);
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('JSONが見つかりません');
+      nutritionData = JSON.parse(jsonMatch[0]);
     }
-
-    const nutritionData: NutritionInfo = JSON.parse(jsonMatch[0]);
 
     return NextResponse.json({ success: true, data: nutritionData });
   } catch (error) {
     console.error('Gemini API error:', error);
+
+    // エラーの詳細情報をクライアントに返してデバッグしやすくする
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
     return NextResponse.json(
-      { success: false, error: '食事の分析に失敗しました。もう一度お試しください。' },
+      { success: false, error: `食事の分析に失敗しました。詳細: ${errorMessage}` },
       { status: 500 }
     );
   }
