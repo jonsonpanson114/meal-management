@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.0-flash' });
 
     const weightsStr = summary.weights.length
       ? summary.weights.map(w => `${w.date}: ${w.weight}kg`).join(', ')

@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-3.0-flash',
       generationConfig: { responseMimeType: 'application/json' },
     });
 
@@ -74,7 +74,6 @@ export async function POST(req: NextRequest) {
     console.error('Error type:', error?.constructor?.name);
     console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
-    console.error('Request body:', { hasImage: !!imageBase64, hasDescription: !!description, description: description?.substring(0, 100) });
 
     // エラーの詳細情報をクライアントに返してデバッグしやすくする
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
