@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         const mealList = meals.map(m => m.description).join('、');
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-3.0-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         const prompt = `あなたは親しみやすい健康アドバイザーAIです。ユーザーの今日の食事内容を見て、
 短く（60〜80文字程度）、ポジティブで具体的なアドバイスを1つだけ送ってください。
