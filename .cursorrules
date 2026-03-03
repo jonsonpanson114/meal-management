@@ -1,0 +1,4 @@
+# Gemini API Model Rule
+
+*   When using the Gemini API in this project, **strictly** use `gemini-2.5-flash` or `gemini-3.0-flash`.
+*   DO NOT use `gemini-2.0-flash` as it does not exist.
