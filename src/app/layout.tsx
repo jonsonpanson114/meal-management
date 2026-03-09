@@ -5,7 +5,7 @@ import AppShell from '@/components/AppShell';
 export const metadata: Metadata = {
   title: 'MealTrack - 食事記録＆健康トラッキング',
   description: 'AIが食事を分析して健康をサポートする食事記録アプリ',
-  manifest: '/manifest.json',
+  manifest: '/manifest.json?v=2',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
