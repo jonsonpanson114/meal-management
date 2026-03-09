@@ -5,18 +5,18 @@ import AppShell from '@/components/AppShell';
 export const metadata: Metadata = {
   title: 'MealTrack - 食事記録＆健康トラッキング',
   description: 'AIが食事を分析して健康をサポートする食事記録アプリ',
-  manifest: '/manifest.json',
+  manifest: '/manifest.json?v=2',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'MealTrack',
     startupImage: [
-      '/icons/icon-512.png',
+      '/icons/icon-512.png?v=2',
     ],
   },
   icons: {
-    icon: '/icons/icon-192.png',
-    apple: '/icons/icon-192.png',
+    icon: '/icons/icon-192.png?v=2',
+    apple: '/icons/icon-192.png?v=2',
   },
 };
 
