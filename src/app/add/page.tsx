@@ -28,6 +28,7 @@ export default function AddMealPage() {
   const [error, setError] = useState('');
   const [quickCalories, setQuickCalories] = useState<number | null>(null);
   const [quickAnalyzing, setQuickAnalyzing] = useState(false);
+  const [manualCaloriesText, setManualCaloriesText] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -89,8 +90,9 @@ export default function AddMealPage() {
       } else {
         setError(data.error || '分析に失敗しました');
       }
-    } catch {
-      setError('ネットワークエラーが発生しました');
+    } catch (err: any) {
+      console.error('Analysis error:', err);
+      setError('ネットワークエラーまたは分析エラーが発生しました: ' + (err.message || 'Unknown error'));
     } finally {
       setAnalyzing(false);
     }
@@ -138,13 +140,15 @@ export default function AddMealPage() {
 
       const { error: dbError } = await supabase.from('meal_records').insert(record);
       if (dbError) {
-        setError('保存に失敗しました: ' + dbError.message);
+        console.error('Database error:', dbError);
+        setError('記録の保存に失敗しました（データベースエラー）: ' + dbError.message);
       } else {
         router.push('/');
         router.refresh();
       }
-    } catch {
-      setError('エラーが発生しました');
+    } catch (err: any) {
+      console.error('Save error:', err);
+      setError('保存プロセス中にエラーが発生しました: ' + (err.message || 'Unknown error'));
     } finally {
       setSaving(false);
     }
@@ -291,23 +295,26 @@ export default function AddMealPage() {
         </div>
       )}
 
-      {/* Manual calorie input when no AI */}
-      {!nutrition && (
-        <div className="mb-4">
-          <p className="text-xs text-gray-500 font-medium mb-2">カロリー手動入力</p>
-          <input
-            type="number"
-            placeholder="例: 500"
-            className="w-full bg-white border-2 border-gray-100 focus:border-orange-300 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none transition-colors shadow-sm"
-            onChange={(e) => {
-              const cal = parseInt(e.target.value);
-              if (!isNaN(cal)) {
-                setNutrition({ calories: cal, protein: 0, fat: 0, carbs: 0, foods: [] });
-              }
-            }}
-          />
-        </div>
-      )}
+      {/* Manual calorie input */}
+      <div className="mb-4">
+        <p className="text-xs text-gray-500 font-medium mb-2">カロリー手動入力（AI分析を使わない場合）</p>
+        <input
+          type="number"
+          placeholder="例: 500"
+          value={manualCaloriesText}
+          className="w-full bg-white border-2 border-gray-100 focus:border-orange-300 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none transition-colors shadow-sm"
+          onChange={(e) => {
+            const val = e.target.value;
+            setManualCaloriesText(val);
+            const cal = parseInt(val);
+            if (!isNaN(cal)) {
+              setNutrition({ calories: cal, protein: 0, fat: 0, carbs: 0, foods: [] });
+            } else {
+              setNutrition(null);
+            }
+          }}
+        />
+      </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3 mb-4">

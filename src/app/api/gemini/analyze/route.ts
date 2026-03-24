@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     return NextResponse.json(
-      { success: false, error: `食事の分析に失敗しました。詳細: ${errorMessage}` },
+      { success: false, error: `AI分析中にエラーが発生しました: ${errorMessage}` },
       { status: 500 }
     );
   }
