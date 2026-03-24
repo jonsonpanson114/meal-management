@@ -297,7 +297,7 @@ export default function AddMealPage() {
 
       {/* Manual calorie input */}
       <div className="mb-4">
-        <p className="text-xs text-gray-500 font-medium mb-2">カロリー手動入力（AI分析を使わない場合）</p>
+        <p className="text-xs text-gray-500 font-medium mb-2">手動でカロリーを入力（AIを使わない場合はこちら）</p>
         <input
           type="number"
           placeholder="例: 500"
