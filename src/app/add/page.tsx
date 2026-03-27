@@ -239,20 +239,27 @@ export default function AddMealPage() {
         )}
       </div>
 
-      {/* Analyze Button */}
-      {!nutrition && (
+      {/* Analyze Button or Re-analyze Section */}
+      <div className="mb-4">
         <button
-          onClick={() => handleAnalyze(false)}
+          onClick={() => handleAnalyze(nutrition ? true : false)}
           disabled={analyzing || (!imageBase64 && !description)}
-          className={`w-full py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 mb-4 ${analyzing || (!imageBase64 && !description)
+          className={`w-full py-3 rounded-2xl font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 ${analyzing || (!imageBase64 && !description)
               ? 'bg-gray-200 text-gray-400 shadow-none'
-              : 'gradient-primary shadow-orange-200'
+              : nutrition
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 shadow-green-100'
+                : 'gradient-primary shadow-orange-200'
             }`}
         >
           {analyzing ? (
             <>
               <Loader2 size={18} className="animate-spin" />
-              AI分析中...
+              分析中...
+            </>
+          ) : nutrition ? (
+            <>
+              <RefreshCw size={18} />
+              AIで再分析する
             </>
           ) : (
             <>
@@ -261,59 +268,61 @@ export default function AddMealPage() {
             </>
           )}
         </button>
-      )}
+      </div>
 
       {/* Nutrition Result */}
       {nutrition && (
-        <div className="mb-4">
+        <div className="mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <NutritionCard data={nutrition} />
 
-          {/* Re-analysis comment */}
-          <div className="mt-3">
-            <p className="text-xs text-gray-500 font-medium mb-2">補足コメント（再計算）</p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="例: 大盛りで食べた、ドレッシングあり"
-                value={userComment}
-                onChange={(e) => setUserComment(e.target.value)}
-                className="flex-1 bg-white border-2 border-gray-100 focus:border-orange-300 rounded-xl px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors shadow-sm"
-              />
-              <button
-                onClick={() => handleAnalyze(true)}
-                disabled={analyzing}
-                className="gradient-green text-white px-4 rounded-xl font-bold flex items-center gap-1 shadow-md active:scale-95 transition-transform"
-              >
-                {analyzing ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <RefreshCw size={16} />
-                )}
-              </button>
+          {/* Re-analysis comment - only show if AI results exist (foods > 0) */}
+          {nutrition.foods && nutrition.foods.length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs text-gray-500 font-medium mb-2">補足コメント（再計算）</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="例: 大盛りで食べた、ドレッシングあり"
+                  value={userComment}
+                  onChange={(e) => setUserComment(e.target.value)}
+                  className="flex-1 bg-white border-2 border-gray-100 focus:border-orange-300 rounded-xl px-3 py-2.5 text-sm text-gray-700 outline-none transition-colors shadow-sm"
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
       {/* Manual calorie input */}
       <div className="mb-4">
-        <p className="text-xs text-gray-500 font-medium mb-2">手動でカロリーを入力（AIを使わない場合はこちら）</p>
-        <input
-          type="number"
-          placeholder="例: 500"
-          value={manualCaloriesText}
-          className="w-full bg-white border-2 border-gray-100 focus:border-orange-300 rounded-xl px-4 py-3 text-sm text-gray-700 outline-none transition-colors shadow-sm"
-          onChange={(e) => {
-            const val = e.target.value;
-            setManualCaloriesText(val);
-            const cal = parseInt(val);
-            if (!isNaN(cal)) {
-              setNutrition({ calories: cal, protein: 0, fat: 0, carbs: 0, foods: [] });
-            } else {
-              setNutrition(null);
-            }
-          }}
-        />
+        <p className="text-xs text-gray-500 font-medium mb-2">手動でカロリーを調整（AIを使わない場合はこちら）</p>
+        <div className="relative">
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="例: 500"
+            value={manualCaloriesText}
+            className="w-full bg-white border-2 border-gray-100 focus:border-orange-300 rounded-xl px-4 py-3 text-sm font-bold text-gray-700 outline-none transition-colors shadow-sm"
+            onChange={(e) => {
+              const val = e.target.value;
+              setManualCaloriesText(val);
+              const cal = parseInt(val);
+              if (!isNaN(cal)) {
+                // Keep existing nutrition info if present, but update calories
+                setNutrition(prev => ({
+                  calories: cal,
+                  protein: prev?.protein || 0,
+                  fat: prev?.fat || 0,
+                  carbs: prev?.carbs || 0,
+                  foods: prev?.foods || []
+                }));
+              } else if (!val) {
+                setNutrition(null);
+              }
+            }}
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">kcal</span>
+        </div>
       </div>
 
       {error && (

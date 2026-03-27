@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
+import { notificationManager } from '@/lib/utils/notifications';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -17,6 +18,9 @@ export default function PWAInstallPrompt() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(console.error);
     }
+
+    // Initialize notification manager
+    notificationManager.init().catch(console.error);
 
     const handler = (e: Event) => {
       e.preventDefault();

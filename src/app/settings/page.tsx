@@ -4,8 +4,10 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Settings, Target, LogOut, Loader2, CheckCircle, Calculator, Zap } from 'lucide-react';
+import { ChevronLeft, Settings, Target, LogOut, Loader2, CheckCircle, Calculator, Zap, Bell } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useNotifications } from '@/lib/hooks/useNotifications';
+import { notificationManager } from '@/lib/utils/notifications';
 
 const ACTIVITY_LEVELS = [
   { value: 'sedentary', label: 'ほぼ動かない', desc: 'デスクワーク中心', factor: 1.2 },
@@ -30,6 +32,7 @@ function calcTargets(age: number, height: number, weight: number, gender: string
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();
+  const { notificationSettings, permission, loading: notificationLoading, toggleNotifications, updateMealTime, refreshSettings } = useNotifications();
 
   // 目標値
   const [targetCalories, setTargetCalories] = useState('2000');
@@ -43,6 +46,12 @@ export default function SettingsPage() {
   const [bodyWeight, setBodyWeight] = useState('');
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [activityLevel, setActivityLevel] = useState('light');
+
+  // 通知設定
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [breakfastTime, setBreakfastTime] = useState('08:00');
+  const [lunchTime, setLunchTime] = useState('12:00');
+  const [dinnerTime, setDinnerTime] = useState('19:00');
 
   // UI
   const [displayName, setDisplayName] = useState('');
@@ -75,9 +84,17 @@ export default function SettingsPage() {
         if (data.gender) setGender(data.gender);
         if (data.activity_level) setActivityLevel(data.activity_level);
       }
+
+      // Load notification settings
+      if (notificationSettings) {
+        setNotificationEnabled(notificationSettings.enabled || false);
+        setBreakfastTime(notificationSettings.breakfast_time || '08:00');
+        setLunchTime(notificationSettings.lunch_time || '12:00');
+        setDinnerTime(notificationSettings.dinner_time || '19:00');
+      }
     };
     load();
-  }, []);
+  }, [notificationSettings]);
 
   const handleAutoCalc = () => {
     const a = parseInt(age);
@@ -94,6 +111,43 @@ export default function SettingsPage() {
   };
 
   const canCalc = !!age && !!heightCm && !!bodyWeight;
+
+  const handleNotificationToggle = async (enabled: boolean) => {
+    const success = await toggleNotifications(enabled);
+    if (success) {
+      setNotificationEnabled(enabled);
+      if (enabled) {
+        // Schedule notifications
+        await notificationManager.init();
+        await notificationManager.scheduleNotifications([
+          { mealType: 'breakfast', time: breakfastTime },
+          { mealType: 'lunch', time: lunchTime },
+          { mealType: 'dinner', time: dinnerTime },
+        ]);
+      } else {
+        // Clear all notifications
+        await notificationManager.clearAllNotifications();
+      }
+    }
+  };
+
+  const handleMealTimeChange = async (mealType: 'breakfast' | 'lunch' | 'dinner', time: string) => {
+    const success = await updateMealTime(mealType, time);
+    if (success) {
+      if (mealType === 'breakfast') setBreakfastTime(time);
+      if (mealType === 'lunch') setLunchTime(time);
+      if (mealType === 'dinner') setDinnerTime(time);
+
+      // Reschedule notifications if enabled
+      if (notificationEnabled) {
+        await notificationManager.scheduleNotifications([
+          { mealType: 'breakfast', time: mealType === 'breakfast' ? time : breakfastTime },
+          { mealType: 'lunch', time: mealType === 'lunch' ? time : lunchTime },
+          { mealType: 'dinner', time: mealType === 'dinner' ? time : dinnerTime },
+        ]);
+      }
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -258,6 +312,70 @@ export default function SettingsPage() {
           {!canCalc && (
             <p className="text-[10px] text-gray-400 text-center mt-1.5">年齢・身長・体重を入力すると計算できます</p>
           )}
+        </div>
+
+        {/* 通知設定 */}
+        <div className="card">
+          <div className="flex items-center gap-2 mb-4">
+            <Bell size={18} className="text-blue-500" />
+            <h2 className="font-bold text-gray-700">食事リマインダー通知</h2>
+          </div>
+
+          <div className="space-y-4">
+            {/* 通知オンオフ */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-700">通知を有効にする</p>
+                <p className="text-xs text-gray-400">毎日食事の時間にお知らせ</p>
+              </div>
+              <button
+                onClick={() => handleNotificationToggle(!notificationEnabled)}
+                className={`w-14 h-8 rounded-full p-1 transition-colors duration-200 ${
+                  notificationEnabled ? 'bg-blue-500' : 'bg-gray-200'
+                }`}
+              >
+                <div
+                  className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-200 ${
+                    notificationEnabled ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {notificationEnabled && (
+              <>
+                <div className="border-t border-gray-100 pt-4 space-y-3">
+                  {[
+                    { label: '🍳 朝食', value: breakfastTime, setter: (t: string) => handleMealTimeChange('breakfast', t) },
+                    { label: '🍱 昼食', value: lunchTime, setter: (t: string) => handleMealTimeChange('lunch', t) },
+                    { label: '🍙 夕食', value: dinnerTime, setter: (t: string) => handleMealTimeChange('dinner', t) },
+                  ].map(({ label, value, setter }) => (
+                    <div key={label}>
+                      <label className="text-xs font-semibold text-gray-500 mb-1.5 block">{label}</label>
+                      <input
+                        type="time"
+                        value={value}
+                        onChange={(e) => setter(e.target.value)}
+                        className="w-full bg-blue-50 border-2 border-blue-100 focus:border-blue-400 rounded-xl px-4 py-3 text-sm font-bold text-blue-600 outline-none transition-colors"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {permission === 'denied' && (
+              <div className="bg-red-50 text-red-500 text-sm rounded-xl px-4 py-3">
+                通知がブロックされています。ブラウザの設定から通知を許可してください。
+              </div>
+            )}
+
+            {permission === 'default' && notificationEnabled && (
+              <div className="bg-yellow-50 text-yellow-600 text-sm rounded-xl px-4 py-3">
+                通知許可のリクエストを承諾してください。
+              </div>
+            )}
+          </div>
         </div>
 
         {/* カロリー & PFC 目標 */}
