@@ -35,6 +35,7 @@ jobs:
       run: |
         npx cap sync android
         cd android
+        chmod +x gradlew
         ./gradlew assembleDebug --no-daemon
 
     - name: Upload APK
