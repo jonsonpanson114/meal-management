@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: 'MealTrack',
   webDir: '.next',
   server: {
-    // ローカル開発時はlocalhost、本番ではVercelのURL
-    url: process.env.CAPACITOR_WEB_URL || 'http://192.168.1.5:3000',
+    // 本番環境はVercel、ローカル開発時は環境変数で上書き可
+    url: process.env.CAPACITOR_WEB_URL || 'https://meal-management.vercel.app',
     cleartext: true
   }
 };
