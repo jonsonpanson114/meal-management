@@ -58,6 +58,7 @@ export class NotificationManager {
               hour: hours,
               minute: minutes,
             },
+            repeats: true, // Repeated daily
             allowWhileIdle: true,
           },
           sound: 'default',
@@ -70,14 +71,73 @@ export class NotificationManager {
         notifications,
       });
     } else {
-      // Fallback to web notifications (Service Worker)
-      console.warn('Native notifications not available, use web notifications instead');
+      // Full background push subscription for Web/PWA
+      await this.subscribeToPushNotifications();
     }
+  }
+
+  async subscribeToPushNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      
+      // Public VAPID Key from vapid.txt
+      const vapidPublicKey = 'BFAqWE2Q_lhxYvPqw1SULEQUx8Go5zLZniTAo2W9oafEFZW9idYB-deF__PGl_kUXD9B-DLW1Ad8k-ioimaC9hA';
+      
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: this.urlBase64ToUint8Array(vapidPublicKey)
+      });
+
+      // Save subscription to backend
+      const res = await fetch('/api/notifications/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ subscription }),
+      });
+
+      if (!res.ok) throw new Error('Failed to save subscription');
+      console.log('Successfully subscribed to Push Notifications');
+    } catch (err) {
+      console.error('Failed to subscribe to Web Push:', err);
+    }
+  }
+
+  async unsubscribeFromPushNotifications() {
+    if (!('serviceWorker' in navigator)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await subscription.unsubscribe();
+        console.log('Unsubscribed from Push Notifications');
+      }
+    } catch (err) {
+      console.error('Failed to unsubscribe:', err);
+    }
+  }
+
+  private urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
   }
 
   async clearAllNotifications() {
     if (Capacitor.isNativePlatform()) {
-      // Cancel all notification IDs (1, 2, 3 for breakfast, lunch, dinner)
       await LocalNotifications.cancel({
         notifications: [
           { id: 1 },
@@ -85,6 +145,8 @@ export class NotificationManager {
           { id: 3 },
         ]
       });
+    } else {
+      await this.unsubscribeFromPushNotifications();
     }
   }
 

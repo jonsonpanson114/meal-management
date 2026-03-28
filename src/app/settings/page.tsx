@@ -59,6 +59,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [calcFlash, setCalcFlash] = useState(false);
+  const [testingPush, setTestingPush] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -146,6 +147,32 @@ export default function SettingsPage() {
           { mealType: 'dinner', time: mealType === 'dinner' ? time : dinnerTime },
         ]);
       }
+    }
+  };
+
+  const handleTestPush = async () => {
+    setTestingPush(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const res = await fetch('/api/notifications/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          title: '🍱 テスト通知',
+          body: '5秒後にアプリを閉じてみてください。通知が届くはずです！',
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to send test push');
+      alert('テスト通知を送信しました。アプリを閉じて待っていてください。');
+    } catch (err) {
+      console.error(err);
+      alert('テスト通知の送信に失敗しました。');
+    } finally {
+      setTestingPush(false);
     }
   };
 
@@ -374,6 +401,20 @@ export default function SettingsPage() {
               <div className="bg-yellow-50 text-yellow-600 text-sm rounded-xl px-4 py-3">
                 通知許可のリクエストを承諾してください。
               </div>
+            )}
+
+            {notificationEnabled && (
+              <button
+                onClick={handleTestPush}
+                disabled={testingPush}
+                className="w-full py-2.5 bg-gray-50 border-2 border-gray-100 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+              >
+                {testingPush ? (
+                  <><Loader2 size={14} className="animate-spin" /> 送信中...</>
+                ) : (
+                  <><Bell size={14} /> テスト通知を送る</>
+                )}
+              </button>
             )}
           </div>
         </div>

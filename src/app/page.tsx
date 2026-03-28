@@ -45,9 +45,12 @@ export default function HomePage() {
           <p className="text-xs text-gray-400 font-medium">{today}</p>
         </div>
         <div className="flex gap-2">
-          <button className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+          <Link
+            href="/settings"
+            className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-transform"
+          >
             <Bell size={18} className="text-gray-500" />
-          </button>
+          </Link>
           <Link
             href="/settings"
             className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-transform"

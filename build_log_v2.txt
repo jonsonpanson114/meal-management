@@ -1,0 +1,43 @@
+
+> meal-management@0.1.0 build
+> next build
+
+  笆ｲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ 笨・Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/16) ...
+   Generating static pages (4/16) 
+   Generating static pages (8/16) 
+   Generating static pages (12/16) 
+ 笨・Generating static pages (16/16)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+笏・笳・/                                    12.4 kB         164 kB
+笏・笳・/_not-found                          873 B          88.2 kB
+笏・笳・/add                                 6.02 kB         149 kB
+笏・ﾆ・/api/gemini/analyze                  0 B                0 B
+笏・ﾆ・/api/gemini/daily-insight            0 B                0 B
+笏・ﾆ・/api/gemini/weekly-report            0 B                0 B
+笏・ﾆ・/api/notifications/send              0 B                0 B
+笏・ﾆ・/api/notifications/subscribe         0 B                0 B
+笏・ﾆ・/auth/callback                       0 B                0 B
+笏・笳・/login                               2.71 kB         155 kB
+笏・笳・/register                            2.31 kB         154 kB
+笏・笳・/report                              3.44 kB         147 kB
+笏・笳・/settings                            6.71 kB         153 kB
++ First Load JS shared by all            87.4 kB
+  笏・chunks/117-13166794211b8ad1.js       31.7 kB
+  笏・chunks/fd9d1056-492374e25eee495c.js  53.6 kB
+  笏・other shared chunks (total)          1.98 kB
+
+
+ﾆ・Middleware                             74.6 kB
+
+笳・ (Static)   prerendered as static content
+ﾆ・ (Dynamic)  server-rendered on demand
+

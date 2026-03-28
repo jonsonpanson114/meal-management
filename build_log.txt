@@ -1,0 +1,21 @@
+
+> meal-management@0.1.0 build
+> next build
+
+  笆ｲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ 笨・Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./android/app/src/main/assets/public/types/app/(auth)/login/page.ts:2:24
+Type error: Cannot find module '../../../../../src/app/(auth)/login/page.js' or its corresponding type declarations.
+
+  1 | // File: C:\Users\jonso\.gemini\meal tracking\src\app\(auth)\login\page.tsx
+> 2 | import * as entry from '../../../../../src/app/(auth)/login/page.js'
+    |                        ^
+  3 | import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
+  4 |
+  5 | type TEntry = typeof import('../../../../../src/app/(auth)/login/page.js')
+Next.js build worker exited with code: 1 and signal: null

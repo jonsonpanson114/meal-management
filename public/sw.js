@@ -79,41 +79,62 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
-function scheduleNotification(mealType, time) {
-  // Calculate delay until next meal time
-  const [hours, minutes] = time.split(':').map(Number);
-  const now = new Date();
-  const scheduledTime = new Date();
-  scheduledTime.setHours(hours, minutes, 0, 0);
+// Push event listener for background notifications
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
 
-  // If time has passed today, schedule for tomorrow
-  if (scheduledTime < now) {
-    scheduledTime.setDate(scheduledTime.getDate() + 1);
-  }
+  try {
+    const data = event.data.json();
+    const { title, body, icon, url, tag } = data;
 
-  const delay = scheduledTime.getTime() - now.getTime();
-
-  // Schedule notification
-  setTimeout(() => {
-    const mealNames = {
-      breakfast: '🍳 朝食',
-      lunch: '🍱 昼食',
-      dinner: '🍙 夕食'
-    };
-
-    self.registration.showNotification(`${mealNames[mealType]}の時間です！`, {
-      body: '食事を記録してください',
-      icon: '/icons/icon-192.png?v=2',
+    const options = {
+      body: body || '食事を記録する時間です！',
+      icon: icon || '/icons/icon-192.png?v=2',
       badge: '/icons/icon-192.png?v=2',
       vibrate: [200, 100, 200],
-      tag: `meal-${mealType}`,
+      tag: tag || 'meal-reminder',
       requireInteraction: true,
+      data: { url: url || '/add' },
       actions: [
         {
           action: 'open',
           title: '記録する',
         }
       ]
-    });
-  }, delay);
-}
+    };
+
+    event.waitUntil(
+      self.registration.showNotification(title || 'MealTrack', options)
+    );
+  } catch (err) {
+    console.error('Error handling push event:', err);
+    // Generic fallback if JSON parsing fails
+    event.waitUntil(
+      self.registration.showNotification('MealTrack', {
+        body: '食事の記録時間です。',
+        icon: '/icons/icon-192.png?v=2',
+      })
+    );
+  }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const urlToOpen = (event.notification.data && event.notification.data.url) || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Check if there is already a window open with this URL
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If no window is open, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
