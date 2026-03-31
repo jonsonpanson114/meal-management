@@ -50,6 +50,7 @@ export async function POST(request: Request) {
               body: body || '食事を記録する時間ですよ！',
               url: url || '/add',
               icon: '/icons/notification-icon.png',
+              badge: '/icons/badge-72.png',
               tag: 'meal-reminder',
             })
           );

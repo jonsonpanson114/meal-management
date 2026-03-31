@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head><title>Badge Generator</title></head>
+<body>
+<canvas id="c72" width="72" height="72"></canvas>
+<script>
+  const canvas = document.getElementById('c72');
+  const ctx = canvas.getContext('2d');
+  const size = 72;
+  const p = size * 0.2; // Padding for small badge
+  const inner = size - (p * 2);
+
+  // NO background (transparent)
+
+  // Draw a simple bento box silhouette
+  ctx.fillStyle = '#ffffff'; // PURE WHITE
+  
+  // Outer box with rounded corners
+  const r = 4;
+  ctx.beginPath();
+  ctx.roundRect(p, p + inner*0.1, inner, inner*0.8, r);
+  ctx.fill();
+
+  // "Dividers" (inner cuts) - we use clearRect to make them transparent parts of the white silhouette
+  ctx.globalCompositeOperation = 'destination-out';
+  
+  // Vertical divider
+  ctx.fillRect(p + inner*0.4, p + inner*0.1, 2, inner*0.8);
+  // Horizontal divider on right side
+  ctx.fillRect(p + inner*0.4, p + inner*0.5, inner*0.6, 2);
+
+  // Round spot on left (rice umeboshi style)
+  ctx.beginPath();
+  ctx.arc(p + inner*0.2, p + inner*0.5, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Reset to draw something on top (e.g. chopsticks) if needed, 
+  // but keep it simple for a notification badge.
+</script>
+</body>
+</html>

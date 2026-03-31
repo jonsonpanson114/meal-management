@@ -46,6 +46,7 @@ self.addEventListener('message', (event) => {
     self.registration.showNotification(title, {
       body,
       icon: icon || '/icons/notification-icon.png',
+      badge: '/icons/badge-72.png',
       vibrate: [200, 100, 200],
       tag: 'meal-reminder',
       requireInteraction: true,
@@ -89,6 +90,7 @@ self.addEventListener('push', (event) => {
     const options = {
       body: body || '食事を記録する時間です！',
       icon: icon || '/icons/notification-icon.png',
+      badge: data.badge || '/icons/badge-72.png',
       vibrate: [200, 100, 200],
       tag: tag || 'meal-reminder',
       requireInteraction: true,
