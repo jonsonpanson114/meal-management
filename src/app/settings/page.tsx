@@ -60,6 +60,8 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [calcFlash, setCalcFlash] = useState(false);
   const [testingPush, setTestingPush] = useState(false);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [isSupported, setIsSupported] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -93,6 +95,15 @@ export default function SettingsPage() {
         setLunchTime(notificationSettings.lunch_time || '12:00');
         setDinnerTime(notificationSettings.dinner_time || '19:00');
       }
+
+      // Check support and current subscription
+      const supported = await notificationManager.isSupported();
+      setIsSupported(supported);
+      if (supported && 'serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        setHasSubscription(!!sub);
+      }
     };
     load();
   }, [notificationSettings]);
@@ -118,16 +129,24 @@ export default function SettingsPage() {
     if (success) {
       setNotificationEnabled(enabled);
       if (enabled) {
-        // Schedule notifications
+        // Schedule/Subscribe notifications
         await notificationManager.init();
         await notificationManager.scheduleNotifications([
           { mealType: 'breakfast', time: breakfastTime },
           { mealType: 'lunch', time: lunchTime },
           { mealType: 'dinner', time: dinnerTime },
         ]);
+        
+        // Refresh subscription state
+        if ('serviceWorker' in navigator) {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+          setHasSubscription(!!sub);
+        }
       } else {
         // Clear all notifications
         await notificationManager.clearAllNotifications();
+        setHasSubscription(false);
       }
     }
   };
@@ -404,17 +423,37 @@ export default function SettingsPage() {
             )}
 
             {notificationEnabled && (
-              <button
-                onClick={handleTestPush}
-                disabled={testingPush}
-                className="w-full py-2.5 bg-gray-50 border-2 border-gray-100 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
-              >
-                {testingPush ? (
-                  <><Loader2 size={14} className="animate-spin" /> 送信中...</>
-                ) : (
-                  <><Bell size={14} /> テスト通知を送る</>
-                )}
-              </button>
+              <div className="pt-2">
+                <button
+                  onClick={handleTestPush}
+                  disabled={testingPush}
+                  className="w-full py-2.5 bg-gray-50 border-2 border-gray-100 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 mb-2"
+                >
+                  {testingPush ? (
+                    <><Loader2 size={14} className="animate-spin" /> 送信中...</>
+                  ) : (
+                    <><Bell size={14} /> テスト通知を送る</>
+                  )}
+                </button>
+                
+                {/* Debug Info */}
+                <div className="bg-gray-50 rounded-lg p-3 text-[10px] text-gray-400 font-mono space-y-1 mt-2">
+                  <div className="flex justify-between items-center">
+                    <span>支援状況:</span>
+                    <span className={isSupported ? 'text-green-500' : 'text-red-500'}>{isSupported ? 'サポート対象' : '非対応ブラウザ'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>許可状態:</span>
+                    <span className={permission === 'granted' ? 'text-green-500' : 'text-orange-500'}>
+                      {permission === 'granted' ? '許可済み' : permission === 'denied' ? 'ブロック中' : '未リクエスト'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>購読情報:</span>
+                    <span className={hasSubscription ? 'text-green-500' : 'text-gray-300'}>{hasSubscription ? '接続済み' : '未接続'}</span>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>

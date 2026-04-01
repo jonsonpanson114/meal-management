@@ -82,6 +82,13 @@ export class NotificationManager {
     try {
       const registration = await navigator.serviceWorker.ready;
       
+      // 1. Unsubscribe from existing one if it exists to clean up
+      const existingSub = await registration.pushManager.getSubscription();
+      if (existingSub) {
+        await existingSub.unsubscribe();
+        console.log('Cleaned up existing subscription before re-subscribing');
+      }
+      
       // Public VAPID Key from vapid.txt
       const vapidPublicKey = 'BFAqWE2Q_lhxYvPqw1SULEQUx8Go5zLZniTAo2W9oafEFZW9idYB-deF__PGl_kUXD9B-DLW1Ad8k-ioimaC9hA';
       
